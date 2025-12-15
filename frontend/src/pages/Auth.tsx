@@ -10,6 +10,7 @@ type Step = 1 | 2 | 3;
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string;
 
 interface FormState {
+  name: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -32,6 +33,7 @@ const Auth = () => {
   const [addressProof, setAddressProof] = useState<File | null>(null);
 
   const [form, setForm] = useState<FormState>({
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -88,7 +90,7 @@ const Auth = () => {
   const sendMagicLink = async (): Promise<void> => {
     setError(null);
 
-    if (!form.email || !form.password || !form.confirmPassword) {
+    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
       setError("All fields are required");
       return;
     }
@@ -136,6 +138,7 @@ const Auth = () => {
     setError(null);
 
     const payload = {
+      name: form.name,
       email: form.email,
       phone: form.phone,
       address: form.address,
@@ -195,15 +198,18 @@ const Auth = () => {
                 value={form.password}
                 onChange={(v) => setForm({ ...form, password: v })}
               />
-              <PrimaryButton loading={loading}>
-                Sign In
-              </PrimaryButton>
+              <PrimaryButton loading={loading}>Sign In</PrimaryButton>
             </form>
           )}
 
           {/* STEP 1 */}
           {tab === "signup" && step === 1 && (
             <div className="space-y-6">
+              <Field
+                label="Full Name"
+                value={form.name}
+                onChange={(v) => setForm({ ...form, name: v })}
+              />
               <Field
                 label="Email"
                 value={form.email}
@@ -223,10 +229,7 @@ const Auth = () => {
                   setForm({ ...form, confirmPassword: v })
                 }
               />
-              <PrimaryButton
-                loading={loading}
-                onClick={sendMagicLink}
-              >
+              <PrimaryButton loading={loading} onClick={sendMagicLink}>
                 Continue
               </PrimaryButton>
             </div>
@@ -237,11 +240,9 @@ const Auth = () => {
             <div className="text-center space-y-4">
               <div className="mx-auto h-10 w-10 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
               <p className="text-sm text-slate-600">
-                Check your email to verify
+                Verify your email to continue
               </p>
-              <p className="font-medium text-slate-900">
-                {form.email}
-              </p>
+              <p className="font-medium">{form.email}</p>
             </div>
           )}
 
@@ -253,7 +254,6 @@ const Auth = () => {
                 value={form.phone}
                 onChange={(v) => setForm({ ...form, phone: v })}
               />
-
               <Textarea
                 label="Residential Address"
                 value={form.address}
@@ -280,8 +280,7 @@ const Auth = () => {
                 <label className="block text-sm font-medium mb-2">
                   Address Proof (PDF)
                 </label>
-
-                <label className="flex items-center justify-between gap-4 rounded-lg border border-dashed border-slate-300 px-4 py-3 cursor-pointer hover:border-blue-400 transition">
+                <label className="flex items-center justify-between gap-4 rounded-lg border border-dashed px-4 py-3 cursor-pointer hover:border-blue-400 transition">
                   <span className="text-sm text-slate-600">
                     {addressProof
                       ? addressProof.name
@@ -335,16 +334,10 @@ interface TabsProps {
 const Tabs = ({ tab, setTab }: TabsProps) => (
   <div className="px-8">
     <div className="grid grid-cols-2 rounded-xl bg-slate-100 p-1.5 text-sm">
-      <TabButton
-        active={tab === "signin"}
-        onClick={() => setTab("signin")}
-      >
+      <TabButton active={tab === "signin"} onClick={() => setTab("signin")}>
         Sign In
       </TabButton>
-      <TabButton
-        active={tab === "signup"}
-        onClick={() => setTab("signup")}
-      >
+      <TabButton active={tab === "signup"} onClick={() => setTab("signup")}>
         Sign Up
       </TabButton>
     </div>
@@ -357,11 +350,7 @@ interface TabButtonProps {
   children: React.ReactNode;
 }
 
-const TabButton = ({
-  active,
-  onClick,
-  children,
-}: TabButtonProps) => (
+const TabButton = ({ active, onClick, children }: TabButtonProps) => (
   <button
     type="button"
     onClick={onClick}
@@ -382,16 +371,9 @@ interface FieldProps {
   type?: string;
 }
 
-const Field = ({
-  label,
-  value,
-  onChange,
-  type = "text",
-}: FieldProps) => (
+const Field = ({ label, value, onChange, type = "text" }: FieldProps) => (
   <div>
-    <label className="block text-sm font-medium mb-2">
-      {label}
-    </label>
+    <label className="block text-sm font-medium mb-2">{label}</label>
     <input
       type={type}
       value={value}
@@ -407,15 +389,9 @@ interface TextareaProps {
   onChange: (value: string) => void;
 }
 
-const Textarea = ({
-  label,
-  value,
-  onChange,
-}: TextareaProps) => (
+const Textarea = ({ label, value, onChange }: TextareaProps) => (
   <div>
-    <label className="block text-sm font-medium mb-2">
-      {label}
-    </label>
+    <label className="block text-sm font-medium mb-2">{label}</label>
     <textarea
       rows={5}
       value={value}
@@ -431,11 +407,7 @@ interface PrimaryButtonProps {
   onClick?: () => void;
 }
 
-const PrimaryButton = ({
-  children,
-  loading,
-  onClick,
-}: PrimaryButtonProps) => (
+const PrimaryButton = ({ children, loading, onClick }: PrimaryButtonProps) => (
   <button
     type={onClick ? "button" : "submit"}
     onClick={onClick}
@@ -454,11 +426,7 @@ const ErrorBox = ({ message }: { message: string }) => (
 
 const Header = () => (
   <div className="px-10 pt-10 pb-6 text-center">
-    <img
-      src="/icon.svg"
-      className="h-14 w-14 mx-auto mb-4"
-      alt="Logo"
-    />
+    <img src="/icon.svg" className="h-14 w-14 mx-auto mb-4" alt="Logo" />
     <h1 className="text-3xl font-bold">SecureBank AI</h1>
     <p className="text-sm text-slate-600 mt-2">
       Secure onboarding with KYC verification

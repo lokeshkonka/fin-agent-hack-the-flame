@@ -53,6 +53,7 @@ Authorization: Bearer <SUPABASE_JWT>
 
 ```json
 {
+  "name": "Full Name",
   "email": "user@example.com",
   "phone": "9876543210",
   "address": "Full residential address",
