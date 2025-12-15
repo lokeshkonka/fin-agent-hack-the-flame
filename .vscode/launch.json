@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-FinApplication<fin>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.meticura.fin.FinApplication",
+            "projectName": "fin",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
