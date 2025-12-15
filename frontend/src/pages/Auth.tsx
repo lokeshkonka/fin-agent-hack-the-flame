@@ -20,6 +20,12 @@ interface FormState {
   aadhaar: string;
 }
 
+interface DocsState {
+  aadhaarProof: File | null;
+  panProof: File | null;
+  addressProof: File | null;
+}
+
 /* ================= MAIN ================= */
 
 const Auth = () => {
@@ -27,10 +33,9 @@ const Auth = () => {
 
   const [tab, setTab] = useState<Tab>("signin");
   const [step, setStep] = useState<Step>(1);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [accepted, setAccepted] = useState<boolean>(false);
-  const [addressProof, setAddressProof] = useState<File | null>(null);
+  const [accepted, setAccepted] = useState(false);
 
   const [form, setForm] = useState<FormState>({
     name: "",
@@ -43,18 +48,19 @@ const Auth = () => {
     aadhaar: "",
   });
 
+  const [docs, setDocs] = useState<DocsState>({
+    aadhaarProof: null,
+    panProof: null,
+    addressProof: null,
+  });
+
   /* ================= MAGIC LINK LISTENER ================= */
 
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (
-        event === "SIGNED_IN" &&
-        session &&
-        tab === "signup" &&
-        step === 2
-      ) {
+      if (event === "SIGNED_IN" && session && tab === "signup" && step === 2) {
         setStep(3);
       }
     });
@@ -64,9 +70,7 @@ const Auth = () => {
 
   /* ================= SIGN IN ================= */
 
-  const handleSignIn = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -82,15 +86,20 @@ const Auth = () => {
       return;
     }
 
-    navigate("/");
+    navigate("/dashboard");
   };
 
   /* ================= SIGN UP STEP 1 ================= */
 
-  const sendMagicLink = async (): Promise<void> => {
+  const sendMagicLink = async () => {
     setError(null);
 
-    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+    if (
+      !form.name ||
+      !form.email ||
+      !form.password ||
+      !form.confirmPassword
+    ) {
       setError("All fields are required");
       return;
     }
@@ -119,46 +128,56 @@ const Auth = () => {
 
   /* ================= FINAL SUBMIT ================= */
 
-  const submitSignup = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
+  const submitSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
 
     if (!accepted) {
-      setError("You must accept Terms & Privacy Policy");
+      setError("Accept Terms & Privacy Policy");
       return;
     }
 
-    if (!addressProof || addressProof.type !== "application/pdf") {
-      setError("Address proof must be a PDF file");
+    if (!docs.aadhaarProof || !docs.panProof || !docs.addressProof) {
+      setError("All PDF documents are required");
       return;
     }
 
     setLoading(true);
-    setError(null);
-
-    const payload = {
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      address: form.address,
-      pan: form.pan,
-      aadhaar: form.aadhaar,
-      approved: false,
-    };
 
     try {
+      const formData = new FormData();
+
+      const payload = {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        address: form.address,
+        pan: form.pan,
+        aadhaar: form.aadhaar,
+        approved: false,
+      };
+
+      formData.append(
+        "data",
+        new Blob([JSON.stringify(payload)], {
+          type: "application/json",
+        })
+      );
+
+      formData.append("aadhaarPdf", docs.aadhaarProof);
+      formData.append("panPdf", docs.panProof);
+      formData.append("addprofPdf", docs.addressProof);
+
       const res = await fetch(`${BACKEND_URL}/auth/signup`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
       if (!res.ok) {
         throw new Error("Signup failed");
       }
 
-      navigate("/");
+      navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
@@ -169,7 +188,7 @@ const Auth = () => {
   /* ================= UI ================= */
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-blue-100 px-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 px-6">
       <div className="w-full max-w-lg rounded-3xl bg-white shadow-xl border border-slate-200">
         <Header />
 
@@ -184,138 +203,52 @@ const Auth = () => {
         <div className="px-10 py-8 space-y-6">
           {error && <ErrorBox message={error} />}
 
-          {/* SIGN IN */}
           {tab === "signin" && (
             <form onSubmit={handleSignIn} className="space-y-6">
-              <Field
-                label="Email"
-                value={form.email}
-                onChange={(v) => setForm({ ...form, email: v })}
-              />
-              <Field
-                label="Password"
-                type="password"
-                value={form.password}
-                onChange={(v) => setForm({ ...form, password: v })}
-              />
+              <Field label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+              <Field label="Password" type="password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} />
               <PrimaryButton loading={loading}>Sign In</PrimaryButton>
             </form>
           )}
 
-          {/* STEP 1 */}
           {tab === "signup" && step === 1 && (
             <div className="space-y-6">
-              <Field
-                label="Full Name"
-                value={form.name}
-                onChange={(v) => setForm({ ...form, name: v })}
-              />
-              <Field
-                label="Email"
-                value={form.email}
-                onChange={(v) => setForm({ ...form, email: v })}
-              />
-              <Field
-                label="Password"
-                type="password"
-                value={form.password}
-                onChange={(v) => setForm({ ...form, password: v })}
-              />
-              <Field
-                label="Confirm Password"
-                type="password"
-                value={form.confirmPassword}
-                onChange={(v) =>
-                  setForm({ ...form, confirmPassword: v })
-                }
-              />
-              <PrimaryButton loading={loading} onClick={sendMagicLink}>
-                Continue
-              </PrimaryButton>
+              <Field label="Full Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
+              <Field label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+              <Field label="Password" type="password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} />
+              <Field label="Confirm Password" type="password" value={form.confirmPassword} onChange={(v) => setForm({ ...form, confirmPassword: v })} />
+              <PrimaryButton loading={loading} onClick={sendMagicLink}>Continue</PrimaryButton>
             </div>
           )}
 
-          {/* STEP 2 */}
           {tab === "signup" && step === 2 && (
             <div className="text-center space-y-4">
               <div className="mx-auto h-10 w-10 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
-              <p className="text-sm text-slate-600">
-                Verify your email to continue
-              </p>
+              <p className="text-sm text-slate-600">Verify your email to continue</p>
               <p className="font-medium">{form.email}</p>
             </div>
           )}
 
-          {/* STEP 3 */}
           {tab === "signup" && step === 3 && (
             <form onSubmit={submitSignup} className="space-y-6">
-              <Field
-                label="Phone"
-                value={form.phone}
-                onChange={(v) => setForm({ ...form, phone: v })}
-              />
-              <Textarea
-                label="Residential Address"
-                value={form.address}
-                onChange={(v) => setForm({ ...form, address: v })}
-              />
+              <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+              <Textarea label="Residential Address" value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
 
-              <div className="grid grid-cols-2 gap-6">
-                <Field
-                  label="PAN"
-                  value={form.pan}
-                  onChange={(v) => setForm({ ...form, pan: v })}
-                />
-                <Field
-                  label="Aadhaar"
-                  value={form.aadhaar}
-                  onChange={(v) =>
-                    setForm({ ...form, aadhaar: v })
-                  }
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="PAN" value={form.pan} onChange={(v) => setForm({ ...form, pan: v })} />
+                <Field label="Aadhaar" value={form.aadhaar} onChange={(v) => setForm({ ...form, aadhaar: v })} />
               </div>
 
-              {/* FILE UPLOAD */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Address Proof (PDF)
-                </label>
-                <label className="flex items-center justify-between gap-4 rounded-lg border border-dashed px-4 py-3 cursor-pointer hover:border-blue-400 transition">
-                  <span className="text-sm text-slate-600">
-                    {addressProof
-                      ? addressProof.name
-                      : "Upload Aadhaar / Utility Bill (PDF)"}
-                  </span>
-                  <span className="text-xs font-medium text-blue-600">
-                    Browse
-                  </span>
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    className="hidden"
-                    onChange={(e) =>
-                      setAddressProof(
-                        e.target.files?.[0] ?? null
-                      )
-                    }
-                  />
-                </label>
-              </div>
+              <FileInput label="Aadhaar PDF" onSelect={(f) => setDocs({ ...docs, aadhaarProof: f })} />
+              <FileInput label="PAN PDF" onSelect={(f) => setDocs({ ...docs, panProof: f })} />
+              <FileInput label="Address Proof PDF" onSelect={(f) => setDocs({ ...docs, addressProof: f })} />
 
               <label className="flex items-start gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  checked={accepted}
-                  onChange={(e) =>
-                    setAccepted(e.target.checked)
-                  }
-                />
+                <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
                 I agree to Terms & Privacy Policy
               </label>
 
-              <PrimaryButton loading={loading}>
-                Submit for Verification
-              </PrimaryButton>
+              <PrimaryButton loading={loading}>Submit for Verification</PrimaryButton>
             </form>
           )}
         </div>
@@ -324,114 +257,61 @@ const Auth = () => {
   );
 };
 
-/* ================= COMPONENTS ================= */
-
-interface TabsProps {
-  tab: Tab;
-  setTab: (tab: Tab) => void;
-}
-
-const Tabs = ({ tab, setTab }: TabsProps) => (
-  <div className="px-8">
-    <div className="grid grid-cols-2 rounded-xl bg-slate-100 p-1.5 text-sm">
-      <TabButton active={tab === "signin"} onClick={() => setTab("signin")}>
-        Sign In
-      </TabButton>
-      <TabButton active={tab === "signup"} onClick={() => setTab("signup")}>
-        Sign Up
-      </TabButton>
-    </div>
-  </div>
-);
-
-interface TabButtonProps {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}
-
-const TabButton = ({ active, onClick, children }: TabButtonProps) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`rounded-lg py-2.5 font-medium transition ${
-      active
-        ? "bg-white shadow"
-        : "text-slate-600 hover:text-slate-900"
-    }`}
-  >
-    {children}
-  </button>
-);
-
-interface FieldProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-}
-
-const Field = ({ label, value, onChange, type = "text" }: FieldProps) => (
-  <div>
-    <label className="block text-sm font-medium mb-2">{label}</label>
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border px-4 py-3"
-    />
-  </div>
-);
-
-interface TextareaProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}
-
-const Textarea = ({ label, value, onChange }: TextareaProps) => (
-  <div>
-    <label className="block text-sm font-medium mb-2">{label}</label>
-    <textarea
-      rows={5}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border px-4 py-3 resize-none"
-    />
-  </div>
-);
-
-interface PrimaryButtonProps {
-  children: React.ReactNode;
-  loading?: boolean;
-  onClick?: () => void;
-}
-
-const PrimaryButton = ({ children, loading, onClick }: PrimaryButtonProps) => (
-  <button
-    type={onClick ? "button" : "submit"}
-    onClick={onClick}
-    disabled={loading}
-    className="w-full rounded-lg bg-blue-600 py-3 px-2 text-white font-medium disabled:opacity-60"
-  >
-    {loading ? "Processing..." : children}
-  </button>
-);
-
-const ErrorBox = ({ message }: { message: string }) => (
-  <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-    {message}
-  </div>
-);
+/* ================= REUSABLE COMPONENTS ================= */
 
 const Header = () => (
   <div className="px-10 pt-10 pb-6 text-center">
     <img src="/icon.svg" className="h-14 w-14 mx-auto mb-4" alt="Logo" />
     <h1 className="text-3xl font-bold">SecureBank AI</h1>
-    <p className="text-sm text-slate-600 mt-2">
-      Secure onboarding with KYC verification
-    </p>
+    <p className="text-sm text-slate-600 mt-2">Secure onboarding with KYC verification</p>
   </div>
+);
+
+const Tabs = ({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) => (
+  <div className="px-8">
+    <div className="grid grid-cols-2 rounded-xl bg-slate-100 p-1.5 text-sm">
+      <TabButton active={tab === "signin"} onClick={() => setTab("signin")}>Sign In</TabButton>
+      <TabButton active={tab === "signup"} onClick={() => setTab("signup")}>Sign Up</TabButton>
+    </div>
+  </div>
+);
+
+const TabButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+  <button type="button" onClick={onClick} className={`rounded-lg py-2.5 font-medium transition ${active ? "bg-white shadow" : "text-slate-600 hover:text-slate-900"}`}>
+    {children}
+  </button>
+);
+
+const Field = ({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) => (
+  <div>
+    <label className="block text-sm font-medium mb-2">{label}</label>
+    <input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border px-4 py-3" />
+  </div>
+);
+
+const Textarea = ({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) => (
+  <div>
+    <label className="block text-sm font-medium mb-2">{label}</label>
+    <textarea rows={5} value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border px-4 py-3 resize-none" />
+  </div>
+);
+
+const FileInput = ({ label, onSelect }: { label: string; onSelect: (f: File) => void }) => (
+  <label className="flex items-center justify-between gap-4 rounded-lg border border-dashed px-4 py-2 cursor-pointer hover:border-blue-400 transition text-sm">
+    <span className="text-slate-600">{label}</span>
+    <span className="text-xs font-medium text-blue-600">Browse</span>
+    <input type="file" accept="application/pdf" className="hidden" onChange={(e) => e.target.files && onSelect(e.target.files[0])} />
+  </label>
+);
+
+const PrimaryButton = ({ children, loading, onClick }: { children: React.ReactNode; loading?: boolean; onClick?: () => void }) => (
+  <button type={onClick ? "button" : "submit"} onClick={onClick} disabled={loading} className="w-full rounded-lg bg-blue-600 py-3 px-2 text-white font-medium disabled:opacity-60">
+    {loading ? "Processing..." : children}
+  </button>
+);
+
+const ErrorBox = ({ message }: { message: string }) => (
+  <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{message}</div>
 );
 
 export default Auth;
