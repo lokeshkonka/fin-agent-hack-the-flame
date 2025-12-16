@@ -108,11 +108,11 @@ public class AuthService {
         user.setEmail(req.getEmail());
         userRepository.save(user);
 
+        
         userDetails.setPhoneNumber(req.getPhone());
         userDetails.setAddress(req.getAddress());
         userDetails.setPanNumber(req.getPan());
         userDetails.setAadhaarNumber(req.getAadhaar());
-
         userDetailsRepository.save(userDetails);
     }
     
