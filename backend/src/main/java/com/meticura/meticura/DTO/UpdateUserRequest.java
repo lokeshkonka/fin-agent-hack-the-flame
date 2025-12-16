@@ -29,8 +29,8 @@ public class UpdateUserRequest {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getApproved() { return approved; }
-    public void setApproved(String approved) { this.approved = approved; }
+    public boolean getApproved() { return approved; }
+    public void setApproved(boolean approved) { this.approved = approved; }
 
     
 }
