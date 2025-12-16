@@ -1,69 +1,40 @@
 package com.meticura.meticura.DTO;
 
 public class SignupRequest {
-    private String email;
-    private String phone;
-    private String address;
-    private String pan;
-    private String aadhaar;
-    private boolean approved;
     private String name;
-
+    private String email;
+    private String phoneNumber;
+    private String address;
+    private String panNumber;
+    private String aadharNumber;
     
-    public SignupRequest(){}
-    public SignupRequest(String email, String name,String phone, String address, String pan, String aadhaar, boolean approved){
-        this.email = email;
+    public SignupRequest() {}
+    
+    public SignupRequest(String name, String email, String phoneNumber, 
+                        String address, String panNumber, String aadharNumber) {
         this.name = name;
-        this.phone = phone;
-        this.aadhaar = aadhaar;
-        this.pan = pan;
-        this.aadhaar = aadhaar;
-        this.approved = approved;
-    }
-
-    public String getemail(){
-        return email;
-    }
-    public void setemail(String email){
         this.email = email;
-    }
-
-    public String getname(){
-        return name;
-    }
-    public void setname(String name){
-        this.name = name;
-    }
-
-    public String getphone(){
-        return phone;
-    }
-    public void setphone(String phone){
-        this.phone = phone;
-    }
-    public String getaddress(){
-        return address;
-    }
-    public void  setaddress(String address){
+        this.phoneNumber = phoneNumber;
         this.address = address;
+        this.panNumber = panNumber;
+        this.aadharNumber = aadharNumber;
     }
-    public String getpan(){
-        return pan;
-    }
-    public void setpan(String pan){
-        this.pan = pan;
-    }
-    public String getaadhaar(){
-        return aadhaar;
-    }
-    public void setaadhaar(String aadhaar){
-        this.aadhaar = aadhaar;
-    }
-    public boolean getapproved(){
-        return approved;
-    }
-
-    public void setapproved(boolean approved){
-        this.approved = approved;
-    }
+    
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    
+    public String getPanNumber() { return panNumber; }
+    public void setPanNumber(String panNumber) { this.panNumber = panNumber; }
+    
+    public String getAadharNumber() { return aadharNumber; }
+    public void setAadharNumber(String aadharNumber) { this.aadharNumber = aadharNumber; }
 }

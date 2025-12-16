@@ -1,20 +1,16 @@
 package com.meticura.meticura.controller;
 
-import com.meticura.meticura.DTO.*;
-import com.meticura.meticura.services.AuthService;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-
+import com.meticura.meticura.DTO.SignupRequest;
+import com.meticura.meticura.DTO.UpdateUserRequest;
 import com.meticura.meticura.DTO.ApiResponse;
+import com.meticura.meticura.service.AuthService;
+import com.meticura.meticura.config.SupabaseUserInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,30 +20,86 @@ import com.meticura.meticura.DTO.ApiResponse;
 })
 public class AuthController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
     private final AuthService authService;
 
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
 
-    @PostMapping(value = "/signup", consumes = {"multipart/form-data"})
-    public ResponseEntity<Void> signup(
+    /**
+     * Complete signup with KYC documents
+     * Frontend sends JWT in Authorization header
+     * POST /api/auth/complete-signup
+     * Body: form-data with:
+     *   - data: { name, email, phoneNumber, address, panNumber, aadharNumber }
+     *   - aadharPdf: file
+     *   - panPdf: file
+     *   - profilePic: file
+     */
+    @PostMapping(value = "/complete-signup", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<String>> completeSignup(
             @RequestPart("data") SignupRequest req,
-            @RequestPart("aadhaarPdf") MultipartFile aadhaarPdf,
+            @RequestPart("aadharPdf") MultipartFile aadharPdf,
             @RequestPart("panPdf") MultipartFile panPdf,
-            @RequestPart("addprofPdf") MultipartFile addprofPdf) {
+            @RequestPart("adressprof") MultipartFile profilePic,
+            Authentication auth) {
 
-        authService.signup(req, aadhaarPdf, panPdf, addprofPdf);
-        return ResponseEntity.accepted().build();
+        try {
+            SupabaseUserInfo userInfo = (SupabaseUserInfo) auth.getPrincipal();
+
+            authService.completeSignup(
+                userInfo.getId(),
+                userInfo.getEmail() != null ? userInfo.getEmail() : req.getEmail(),
+                req,
+                aadharPdf,
+                panPdf,
+                profilePic
+            );
+
+            logger.info("Signup completed for user: {}", userInfo.getId());
+            return ResponseEntity.ok(new ApiResponse<>(true, "Signup completed successfully"));
+
+        } catch (Exception e) {
+            logger.error("Signup failed", e);
+            return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(false, "Signup failed: " + e.getMessage()));
+        }
     }
 
-    @PutMapping("/users/{userId}")
-    public ResponseEntity<Void> updateUser(
+    /**
+     * Update user profile
+     * PUT /api/auth/profile/{userId}
+     * Optional: include documents to update
+     */
+    @PutMapping(value = "/profile/{userId}", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<String>> updateProfile(
             @PathVariable Long userId,
-            @RequestBody UpdateUserRequest req) {
+            @RequestPart("data") UpdateUserRequest req,
+            @RequestPart(value = "aadharPdf", required = false) MultipartFile aadharPdf,
+            @RequestPart(value = "panPdf", required = false) MultipartFile panPdf,
+            @RequestPart(value = "profilePic", required = false) MultipartFile profilePic,
+            Authentication auth) {
 
-        authService.updateDetails(userId, req);
+        try {
+            SupabaseUserInfo userInfo = (SupabaseUserInfo) auth.getPrincipal();
 
-        return ResponseEntity.noContent().build();
+            // Verify user is updating their own profile
+            if (!userInfo.getId().equals(String.valueOf(userId))) {
+                return ResponseEntity.status(403)
+                    .body(new ApiResponse<>(false, "Forbidden: Cannot update other user's profile"));
+            }
+
+            authService.updateProfile(userId, req, aadharPdf, panPdf, profilePic);
+
+            logger.info("Profile updated for user: {}", userId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Profile updated successfully"));
+
+        } catch (Exception e) {
+            logger.error("Profile update failed", e);
+            return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(false, "Update failed: " + e.getMessage()));
+        }
     }
 }

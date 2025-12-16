@@ -3,35 +3,26 @@ package com.meticura.meticura.DTO;
 public class UpdateUserRequest {
     private String name;
     private String email;
-    private String phone;
+    private String phoneNumber;
     private String address;
-    private String pan;
-    private String aadhaar;
-    private boolean approved;
+    private String panNumber;
+    private String aadharNumber;
     
-
-    // getters and setters
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-
-    public String getPan() { return pan; }
-    public void setPan(String pan) { this.pan = pan; }
-
-    public String getAadhaar() { return aadhaar; }
-    public void setAadhaar(String aadhaar) { this.aadhaar = aadhaar; }
-
+    
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
-
-    public boolean getApproved() { return approved; }
-    public void setApproved(boolean approved) { this.approved = approved; }
-
     
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    
+    public String getPanNumber() { return panNumber; }
+    public void setPanNumber(String panNumber) { this.panNumber = panNumber; }
+    
+    public String getAadharNumber() { return aadharNumber; }
+    public void setAadharNumber(String aadharNumber) { this.aadharNumber = aadharNumber; }
 }
-  
