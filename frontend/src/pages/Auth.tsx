@@ -91,6 +91,14 @@ const Auth = () => {
     navigate("/dashboard");
   };
 
+
+  // await fetch("https://your-api/api/secure/endpoint", {
+//   method: "GET",
+//   headers: {
+//     Authorization: `Bearer ${accessToken}`,
+//   },
+// });
+
   /* ================= SIGN UP STEP 1 (OTP) ================= */
 
   const sendMagicLink = async () => {
