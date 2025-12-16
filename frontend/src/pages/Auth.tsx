@@ -75,11 +75,13 @@ const Auth = () => {
     setError(null);
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,
     });
 
+    const accessToken = data.session?.access_token;
+    
     if (error) {
       setError(error.message);
       setLoading(false);
