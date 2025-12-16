@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-MeticuraApplication<meticura>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.meticura.meticura.MeticuraApplication",
+            "projectName": "meticura",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

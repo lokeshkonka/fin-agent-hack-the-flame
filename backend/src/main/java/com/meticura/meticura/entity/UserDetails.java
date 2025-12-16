@@ -34,6 +34,9 @@ public class UserDetails {
     @Column(length = 500)
     private String panPdfPath;
 
+    @Column(length = 500)
+    private String addressProofPdfPath;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     
@@ -60,4 +63,7 @@ public class UserDetails {
     
     public String getPanPdfPath() { return panPdfPath; }
     public void setPanPdfPath(String panPdfPath) { this.panPdfPath = panPdfPath; }
+
+    public String getAddressProofPdfPath() { return addressProofPdfPath; }
+    public void setAddressProofPdfPath(String addressProofPdfPath) { this.addressProofPdfPath = addressProofPdfPath; }
 }
