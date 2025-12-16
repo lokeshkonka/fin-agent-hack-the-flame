@@ -66,7 +66,7 @@ public class AuthService {
         details.setAadhaarNumber(req.getaadhaar());
         details.setAadhaarPdfPath(aadhaarPath);
         details.setPanPdfPath(panPath);
-        //details.setAddressProofPdfPath(addrPath);
+        details.setAddressProofPdfPath(addrPath);
         userDetailsRepository.save(details);
 
         
