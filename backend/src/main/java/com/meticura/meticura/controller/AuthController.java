@@ -1,14 +1,20 @@
 package com.meticura.meticura.controller;
 
-import com.meticura.meticura.DTO.SignupRequest;
+import com.meticura.meticura.DTO.*;
 import com.meticura.meticura.services.AuthService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.meticura.meticura.DTO.ApiResponse;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -33,5 +39,15 @@ public class AuthController {
 
         authService.signup(req, aadhaarPdf, panPdf, addprofPdf);
         return ResponseEntity.accepted().build();
+    }
+
+    @PutMapping("/users/{userId}")
+    public ResponseEntity<Void> updateUser(
+            @PathVariable Long userId,
+            @RequestBody UpdateUserRequest req) {
+
+        authService.updateDetails(userId, req);
+
+        return ResponseEntity.noContent().build();
     }
 }

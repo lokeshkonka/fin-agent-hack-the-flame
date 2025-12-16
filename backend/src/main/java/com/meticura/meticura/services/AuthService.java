@@ -1,10 +1,5 @@
 package com.meticura.meticura.services;
 
-import com.meticura.meticura.DTO.SignupRequest;
-import com.meticura.meticura.entity.User;
-import com.meticura.meticura.entity.UserDetails;
-import com.meticura.meticura.reposiratory.UserRepository;
-import com.meticura.meticura.reposiratory.UserDetailsRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -12,7 +7,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Map;
+import com.meticura.meticura.DTO.SignupRequest;
+import com.meticura.meticura.DTO.UpdateUserRequest;
+import com.meticura.meticura.entity.User;
+import com.meticura.meticura.entity.UserDetails;
+import com.meticura.meticura.reposiratory.UserDetailsRepository;
+import com.meticura.meticura.reposiratory.UserRepository;
 
 @Service
 public class AuthService {
@@ -91,6 +91,29 @@ public class AuthService {
 
         return path;
     }
+    
+    @Transactional
+    public void updateDetails(
+        Long userId,
+        UpdateUserRequest req
+    ) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("user not found"));
 
+        UserDetails userDetails = userDetailsRepository.findByUserId(userId)
+            .orElseThrow(() -> new RuntimeException("user details not found"));
+
+        // save user 
+        user.setName(req.getName());
+        user.setEmail(req.getEmail());
+        userRepository.save(user);
+
+        userDetails.setPhoneNumber(req.getPhone());
+        userDetails.setAddress(req.getAddress());
+        userDetails.setPanNumber(req.getPan());
+        userDetails.setAadhaarNumber(req.getAadhaar());
+
+        userDetailsRepository.save(userDetails);
+    }
     
 }

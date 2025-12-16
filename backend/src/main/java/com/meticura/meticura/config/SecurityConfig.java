@@ -8,8 +8,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.List;
+
 
 @Configuration
 public class SecurityConfig {
@@ -41,4 +43,11 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
+    // @Bean
+    // public BCryptPasswordEncoder passwordEncoder(){
+    //     return new BCryptPasswordEncoder();
+    // }
+
+    
 }
