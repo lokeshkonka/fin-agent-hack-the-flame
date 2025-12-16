@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,21 +12,19 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string;
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const isAdmin = true;
 
   /* ================= AUTH GUARD ================= */
 
   useEffect(() => {
     const token = localStorage.getItem("sb_access_token");
 
-    // ❌ Not logged in
+   
     if (!token) {
-      navigate("/auth");
+      navigate("/auth", { replace: true });
       return;
     }
 
-    // ✅ Optional: verify token with Spring
-    // (safe to remove if Spring already validates on each API call)
+    // ✅ Lightweight token verification
     fetch(`${BACKEND_URL}/secure/ping`, {
       method: "GET",
       headers: {
@@ -34,7 +33,7 @@ const Dashboard = () => {
     }).then((res) => {
       if (!res.ok) {
         localStorage.removeItem("sb_access_token");
-        navigate("/auth");
+        navigate("/auth", { replace: true });
       }
     });
   }, [navigate]);
@@ -55,10 +54,11 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar isAdmin={isAdmin} />
+      <Navbar />
 
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+
           {/* LEFT COLUMN */}
           <div className="flex flex-col gap-6">
             <BalanceSection

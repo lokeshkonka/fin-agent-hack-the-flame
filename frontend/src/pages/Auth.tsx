@@ -68,23 +68,29 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [step, tab]);
 
-  
 const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   setError(null);
   setLoading(true);
 
   try {
+    // Clear any stale token
+    localStorage.removeItem("sb_access_token");
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,
     });
 
-    if (error || !data.session?.access_token) {
-      throw new Error(error?.message || "Login failed");
+    if (error) {
+      throw new Error(error.message);
     }
 
-    // 🔐 Store JWT
+    if (!data.session?.access_token) {
+      throw new Error("Session not established");
+    }
+
+    // 🔐 Store Supabase JWT
     localStorage.setItem("sb_access_token", data.session.access_token);
 
     navigate("/dashboard", { replace: true });
@@ -95,7 +101,6 @@ const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
   }
 };
 
-  
 const sendMagicLink = async () => {
   setError(null);
 
@@ -114,11 +119,18 @@ const sendMagicLink = async () => {
   try {
     const { error } = await supabase.auth.signInWithOtp({
       email: form.email,
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/auth`,
+      },
     });
 
     if (error) {
-      throw new Error(error.message);
+      throw new Error(
+        error.message.includes("rate")
+          ? "Too many attempts. Try again later."
+          : error.message
+      );
     }
 
     setStep(2);
@@ -130,7 +142,6 @@ const sendMagicLink = async () => {
 };
 
 
-  
 const submitSignup = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   setError(null);
@@ -141,14 +152,14 @@ const submitSignup = async (e: React.FormEvent<HTMLFormElement>) => {
   }
 
   if (!docs.aadhaarProof || !docs.panProof || !docs.addressProof) {
-    setError("All PDF documents are required");
+    setError("All documents are required");
     return;
   }
 
   setLoading(true);
 
   try {
-    
+    /* ================= SET PASSWORD ================= */
     const { data: userData, error: passwordError } =
       await supabase.auth.updateUser({
         password: form.password,
@@ -158,7 +169,7 @@ const submitSignup = async (e: React.FormEvent<HTMLFormElement>) => {
       throw new Error("Failed to set password");
     }
 
-    
+    /* ================= GET JWT ================= */
     const {
       data: { session },
       error: sessionError,
@@ -170,44 +181,48 @@ const submitSignup = async (e: React.FormEvent<HTMLFormElement>) => {
 
     const jwtToken = session.access_token;
 
-    
+    /* ================= BUILD FORM DATA ================= */
     const formData = new FormData();
 
-    const payload = {
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      address: form.address,
-      pan: form.pan,
-      aadhaar: form.aadhaar,
-      approved: false,
-    };
-
+    // 🔴 EXACT MATCH WITH CURL
     formData.append(
       "data",
-      new Blob([JSON.stringify(payload)], {
-        type: "application/json",
-      })
+      new Blob(
+        [
+          JSON.stringify({
+            name: form.name,
+            email: form.email,
+            phoneNumber: form.phone,
+            address: form.address,
+            panNumber: form.pan,
+            aadharNumber: form.aadhaar,
+          }),
+        ],
+        { type: "application/json" }
+      )
     );
-    formData.append("aadhaarPdf", docs.aadhaarProof);
-    formData.append("panPdf", docs.panProof);
-    formData.append("addressPdf", docs.addressProof);
 
-    /* ===== Send to Spring ===== */
-    const res = await fetch(`${BACKEND_URL}/auth/complete-signup`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${jwtToken}`,
-      },
-      body: formData,
-    });
+    formData.append("aadharPdf", docs.aadhaarProof);
+    formData.append("panPdf", docs.panProof);
+    formData.append("profilePic", docs.addressProof);
+
+    const res = await fetch(
+      `${BACKEND_URL}/auth/complete-signup`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+          
+        },
+        body: formData,
+      }
+    );
 
     if (!res.ok) {
       const text = await res.text();
       throw new Error(text || "Signup failed");
     }
 
-    /* ===== Store token ONLY after backend success ===== */
     localStorage.setItem("sb_access_token", jwtToken);
 
     navigate("/dashboard", { replace: true });
