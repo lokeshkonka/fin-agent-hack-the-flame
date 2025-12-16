@@ -68,142 +68,159 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [step, tab]);
 
-  /* ================= SIGN IN ================= */
+  
+const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setError(null);
+  setLoading(true);
 
-  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
+  try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,
     });
 
-    const accessToken = data.session?.access_token;
-    
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
+    if (error || !data.session?.access_token) {
+      throw new Error(error?.message || "Login failed");
     }
 
-    navigate("/dashboard");
-  };
+    // 🔐 Store JWT
+    localStorage.setItem("sb_access_token", data.session.access_token);
 
+    navigate("/dashboard", { replace: true });
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Login failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  // await fetch("https://your-api/api/secure/endpoint", {
-//   method: "GET",
-//   headers: {
-//     Authorization: `Bearer ${accessToken}`,
-//   },
-// });
+  
+const sendMagicLink = async () => {
+  setError(null);
 
-  /* ================= SIGN UP STEP 1 (OTP) ================= */
+  if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+    setError("All fields are required");
+    return;
+  }
 
-  const sendMagicLink = async () => {
-    setError(null);
+  if (form.password !== form.confirmPassword) {
+    setError("Passwords do not match");
+    return;
+  }
 
-    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
-      setError("All fields are required");
-      return;
-    }
+  setLoading(true);
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    setLoading(true);
-
+  try {
     const { error } = await supabase.auth.signInWithOtp({
       email: form.email,
       options: { shouldCreateUser: true },
     });
 
     if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
+      throw new Error(error.message);
     }
 
     setStep(2);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "OTP failed");
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
-  /* ================= FINAL SUBMIT ================= */
 
-  const submitSignup = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
+  
+const submitSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setError(null);
 
-    if (!accepted) {
-      setError("Accept Terms & Privacy Policy");
-      return;
-    }
+  if (!accepted) {
+    setError("Accept Terms & Privacy Policy");
+    return;
+  }
 
-    if (!docs.aadhaarProof || !docs.panProof || !docs.addressProof) {
-      setError("All PDF documents are required");
-      return;
-    }
+  if (!docs.aadhaarProof || !docs.panProof || !docs.addressProof) {
+    setError("All PDF documents are required");
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      /* 🔑 SET PASSWORD AFTER OTP LOGIN */
-      const { error: passwordError } = await supabase.auth.updateUser({
+  try {
+    
+    const { data: userData, error: passwordError } =
+      await supabase.auth.updateUser({
         password: form.password,
       });
 
-      if (passwordError) {
-        throw passwordError;
-      }
-
-      /* 📦 SEND KYC TO SPRING */
-      const formData = new FormData();
-
-      const payload = {
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        address: form.address,
-        pan: form.pan,
-        aadhaar: form.aadhaar,
-        approved: false,
-      };
-
-      formData.append(
-        "data",
-        new Blob([JSON.stringify(payload)], {
-          type: "application/json",
-        })
-      );
-
-      formData.append("aadhaarPdf", docs.aadhaarProof);
-      formData.append("panPdf", docs.panProof);
-      formData.append("addprofPdf", docs.addressProof);
-
-      const res = await fetch(`${BACKEND_URL}/auth/signup`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error("Signup failed");
-      }
-
-      navigate("/dashboard");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Signup failed");
-    } finally {
-      setLoading(false);
+    if (passwordError || !userData.user) {
+      throw new Error("Failed to set password");
     }
-  };
 
-  /* ================= UI (UNCHANGED) ================= */
+    
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session?.access_token) {
+      throw new Error("Session not found");
+    }
+
+    const jwtToken = session.access_token;
+
+    
+    const formData = new FormData();
+
+    const payload = {
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      address: form.address,
+      pan: form.pan,
+      aadhaar: form.aadhaar,
+      approved: false,
+    };
+
+    formData.append(
+      "data",
+      new Blob([JSON.stringify(payload)], {
+        type: "application/json",
+      })
+    );
+    formData.append("aadhaarPdf", docs.aadhaarProof);
+    formData.append("panPdf", docs.panProof);
+    formData.append("addressPdf", docs.addressProof);
+
+    /* ===== Send to Spring ===== */
+    const res = await fetch(`${BACKEND_URL}/auth/complete-signup`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${jwtToken}`,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || "Signup failed");
+    }
+
+    /* ===== Store token ONLY after backend success ===== */
+    localStorage.setItem("sb_access_token", jwtToken);
+
+    navigate("/dashboard", { replace: true });
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Signup failed");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 px-6">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-blue-100 px-6">
       <div className="w-full max-w-lg rounded-3xl bg-white shadow-xl border border-slate-200">
         <Header />
 
