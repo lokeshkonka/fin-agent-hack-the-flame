@@ -21,14 +21,17 @@ public class User {
     private String name;
 
     @Column(nullable = false)
-    private String role = "user"; // default: user
+    private String role = "user";
 
-    @Column(nullable = false)
-    private Boolean isFreezApproved = false; // default: false
+    @Column(name = "is_freez_approved", nullable = false)
+    private Boolean isFreezApproved = false;
+
+    @Column(name = "is_approved", nullable = false)
+    private Boolean isApproved = false;  // ADD THIS
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // getters/setters
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -46,6 +49,9 @@ public class User {
 
     public Boolean getIsFreezApproved() { return isFreezApproved; }
     public void setIsFreezApproved(Boolean isFreezApproved) { this.isFreezApproved = isFreezApproved; }
+
+    public Boolean getIsApproved() { return isApproved; }
+    public void setIsApproved(Boolean isApproved) { this.isApproved = isApproved; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

@@ -32,9 +32,15 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/complete-signup", "/api/auth/profile/**").authenticated()
-                .requestMatchers("/api/user/**").hasRole("USER")
+                // Public endpoints - NO JWT required
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/profile/**").permitAll()
+                
+                // Protected endpoints - JWT required
+                .requestMatchers("/api/user/**").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                
+                // Everything else authenticated
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

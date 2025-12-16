@@ -7,9 +7,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-
-import java.io.IOException;
 
 @Service
 public class StorageService {
@@ -31,16 +28,9 @@ public class StorageService {
         this.webClient = webClientBuilder.build();
     }
 
-    /**
-     * Upload file to Supabase Storage
-     * @param userId User ID
-     * @param fileName Logical file name (e.g., "aadhar.pdf")
-     * @param file MultipartFile
-     * @return Path to uploaded file or null if upload fails
-     */
     public String uploadFile(Long userId, String fileName, MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            logger.warn("File is empty: {}", fileName);
+            logger.error("File '{}' is null or empty for user {}", fileName, userId);
             return null;
         }
 
@@ -48,35 +38,28 @@ public class StorageService {
             String path = userId + "/" + fileName;
             String uploadUrl = supabaseUrl + "/storage/v1/object/" + kycBucket + "/" + path;
 
+            logger.info("Uploading '{}' for user {} to {}", fileName, userId, uploadUrl);
+
             byte[] fileBytes = file.getBytes();
 
             webClient.post()
                 .uri(uploadUrl)
                 .header("Authorization", "Bearer " + serviceRoleKey)
                 .header("apikey", serviceRoleKey)
-                .contentType(MediaType.parseMediaType(file.getContentType() != null ? 
-                    file.getContentType() : "application/octet-stream"))
+                .contentType(MediaType.parseMediaType(
+                    file.getContentType() != null ? file.getContentType() : "application/octet-stream"
+                ))
                 .bodyValue(fileBytes)
                 .retrieve()
                 .toBodilessEntity()
                 .block();
 
-            logger.info("File uploaded successfully: {}", path);
+            logger.info("File '{}' uploaded successfully to {}", fileName, path);
             return path;
 
-        } catch (IOException e) {
-            logger.error("Failed to upload file: {}", fileName, e);
-            return null;
         } catch (Exception e) {
-            logger.error("Error during file upload: {}", fileName, e);
+            logger.error("Failed to upload file '{}' for user {}: {}", fileName, userId, e.getMessage(), e);
             return null;
         }
-    }
-
-    /**
-     * Get public URL for uploaded file
-     */
-    public String getPublicUrl(String filePath) {
-        return supabaseUrl + "/storage/v1/object/public/" + kycBucket + "/" + filePath;
     }
 }
