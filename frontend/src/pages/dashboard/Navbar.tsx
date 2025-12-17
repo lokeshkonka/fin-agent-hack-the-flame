@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { LogOut, User } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "../../integrations/supabase/client";
@@ -14,41 +15,39 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
-  /* ================= FETCH ROLE ================= */
+  // useEffect(() => {
+  //   const token = localStorage.getItem("sb_access_token");
+  //   if (!token) return;
 
-  useEffect(() => {
-    const token = localStorage.getItem("sb_access_token");
-    if (!token) return;
+  //   const controller = new AbortController();
 
-    const controller = new AbortController();
+  //   fetch(`${BACKEND_URL}/admin/approve`, {
+  //     method: "GET",
+  //     headers: {
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //     signal: controller.signal,
+  //   })
+  //     .then((res) => {
+  //       if (!res.ok) throw new Error("Unauthorized");
+  //       return res.json();
+  //     })
+  //     .then((data) => {
+  //       setIsAdmin(Boolean(data.isAdmin));
+  //     })
+  //     .catch(async (err) => {
+  //       if (err.name === "AbortError") return;
 
-    fetch(`${BACKEND_URL}/admin/approve`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Unauthorized");
-        return res.json();
-      })
-      .then((data) => {
-        setIsAdmin(Boolean(data.isAdmin));
-      })
-      .catch(async (err) => {
-        if (err.name === "AbortError") return;
+  //       // Token invalid / expired
+  //       localStorage.removeItem("sb_access_token");
+  //       await supabase.auth.signOut();
+  //       navigate("/auth", { replace: true });
+  //     });
 
-        // Token invalid / expired
-        localStorage.removeItem("sb_access_token");
-        await supabase.auth.signOut();
-        navigate("/auth", { replace: true });
-      });
+  //   return () => controller.abort();
+  // }, [navigate]);
 
-    return () => controller.abort();
-  }, [navigate]);
-
-  /* ================= SIGN OUT ================= */
+ 
 
   const handleSignOut = async (): Promise<void> => {
     try {

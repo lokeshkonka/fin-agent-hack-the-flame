@@ -168,7 +168,7 @@ const submitSignup = async (e: React.FormEvent) => {
       fd.append("panPdf", docs.panProof);
       fd.append("profilePic", docs.addressProof);
 
-      const res = await fetch(`${BACKEND_URL}/api/auth/complete-signup`, {
+      const res = await fetch(`${BACKEND_URL}/auth/complete-signup`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

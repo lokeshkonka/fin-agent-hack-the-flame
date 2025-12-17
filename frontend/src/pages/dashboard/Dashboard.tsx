@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -13,32 +12,26 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string;
 const Dashboard = () => {
   const navigate = useNavigate();
 
-  /* ================= AUTH GUARD ================= */
+useEffect(() => {
+  const token = localStorage.getItem("sb_access_token");
 
-  useEffect(() => {
-    const token = localStorage.getItem("sb_access_token");
+  if (!token) {
+    navigate("/auth", { replace: true });
+    return;
+  }
+  fetch(`${BACKEND_URL}/secure/ping`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }).then((res) => {
+    if (!res.ok) {
+      localStorage.removeItem("sb_access_token");
+      navigate("/auth", { replace: true });
+    }
+  });
+}, [navigate]);
 
-   
-    // if (!token) {
-    //   navigate("/auth", { replace: true });
-    //   return;
-    // }
-
-    // ✅ Lightweight token verification
-    fetch(`${BACKEND_URL}/secure/ping`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }).then((res) => {
-      if (!res.ok) {
-        localStorage.removeItem("sb_access_token");
-        navigate("/auth", { replace: true });
-      }
-    });
-  }, [navigate]);
-
-  /* ================= DUMMY DATA ================= */
 
   const transactions: Tx[] = [
     {
@@ -50,7 +43,6 @@ const Dashboard = () => {
     },
   ];
 
-  /* ================= UI ================= */
 
   return (
     <div className="min-h-screen bg-slate-50">
