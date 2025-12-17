@@ -5,6 +5,7 @@ import Auth from './pages/Auth'
 import Dashboard from './pages/dashboard/Dashboard'
 import LandingPage from './pages/landing/LandingPage'
 import Profile from './pages/Profile/Profile'
+import Docs from './pages/Docs'
 
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="/auth" element={< Auth/>} />
           <Route path="/dashboard" element={<Dashboard/>} />
           <Route path="/profile" element={<Profile/>} />
+          <Route path="/docs" element={<Docs/>} />
         </Routes>
 
       </BrowserRouter>

@@ -1,45 +1,18 @@
 const Footer = () => {
   return (
-    <footer className="mt-14 border-t border-blue-100 bg-blue-50/40">
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm">
-          {/* LEFT */}
-          <div className="text-slate-600">
-            <span className="font-medium text-slate-900">
-              SecureBank AI
-            </span>{" "}
-            © 2025. All rights reserved.
-          </div>
-
-          {/* CENTER */}
-          <div className="flex items-center gap-6 text-slate-500">
-            <span className="hover:text-slate-700 transition cursor-default">
-              SaaS Banking Platform
-            </span>
-            <span className="hidden sm:inline">•</span>
-            <span className="hover:text-slate-700 transition cursor-default">
-              AI-Driven Fraud Prevention
-            </span>
-          </div>
-
-          {/* RIGHT */}
-          <div className="text-slate-600">
-            Contact{" "}
-            <a
-              href="mailto:admin@securebank.ai"
-              className="font-medium text-blue-600 hover:underline"
-            >
-              admin@securebank.ai
-            </a>
+      <footer className="border-t border-gray-200 bg-linear-to-r from-blue-50 to-white mt-16 py-8">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-gray-700 mb-2">SecureBank Agentic AI</p>
+          <p className="text-sm text-gray-500">Agentic AI Fraud Detection for Modern Banking | Team Meticura</p>
+          <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-600">
+            <span>© 2025 SecureBank</span>
+            <span>•</span>
+            <span>Enterprise Fraud Detection</span>
+            <span>•</span>
+            <span>Real-Time Processing</span>
           </div>
         </div>
-
-        {/* SUB FOOTER */}
-        <div className="mt-6 text-xs text-slate-400 text-center">
-           • Designed for production • Secure by design
-        </div>
-      </div>
-    </footer>
+      </footer>
   );
 };
 

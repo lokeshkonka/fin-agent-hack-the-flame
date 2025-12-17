@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../integrations/supabase/client";
 
-/* ================= TYPES ================= */
 
 type Tab = "signin" | "signup";
 type Step = 1 | 2 | 3;
@@ -26,7 +26,6 @@ interface DocsState {
   addressProof: File | null;
 }
 
-/* ================= MAIN ================= */
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -54,7 +53,7 @@ const Auth = () => {
     addressProof: null,
   });
 
-  /* ================= OTP MAGIC LINK LISTENER ================= */
+
 
   useEffect(() => {
     const {
@@ -68,38 +67,27 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [step, tab]);
 
-const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setError(null);
-  setLoading(true);
+const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-  try {
-    // Clear any stale token
-    localStorage.removeItem("sb_access_token");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
+      if (error || !data.session) throw new Error("Login failed");
 
-    if (error) {
-      throw new Error(error.message);
+      localStorage.setItem("sb_access_token", data.session.access_token);
+      navigate("/dashboard", { replace: true });
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
-
-    if (!data.session?.access_token) {
-      throw new Error("Session not established");
-    }
-
-    // 🔐 Store Supabase JWT
-    localStorage.setItem("sb_access_token", data.session.access_token);
-
-    navigate("/dashboard", { replace: true });
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Login failed");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 const sendMagicLink = async () => {
   setError(null);
@@ -140,99 +128,64 @@ const sendMagicLink = async () => {
     setLoading(false);
   }
 };
+const submitSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
+    if (!accepted) return setError("Accept terms");
+    if (!docs.aadhaarProof || !docs.panProof || !docs.addressProof)
+      return setError("All documents required");
 
-const submitSignup = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setError(null);
+    setLoading(true);
 
-  if (!accepted) {
-    setError("Accept Terms & Privacy Policy");
-    return;
-  }
+    try {
+      await supabase.auth.updateUser({ password: form.password });
 
-  if (!docs.aadhaarProof || !docs.panProof || !docs.addressProof) {
-    setError("All documents are required");
-    return;
-  }
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Session missing");
 
-  setLoading(true);
+      const token = data.session.access_token;
 
-  try {
-    /* ================= SET PASSWORD ================= */
-    const { data: userData, error: passwordError } =
-      await supabase.auth.updateUser({
-        password: form.password,
-      });
+      const fd = new FormData();
+      fd.append(
+        "data",
+        new Blob(
+          [
+            JSON.stringify({
+              name: form.name,
+              email: form.email,
+              phoneNumber: form.phone,
+              address: form.address,
+              panNumber: form.pan,
+              aadharNumber: form.aadhaar,
+            }),
+          ],
+          { type: "application/json" }
+        )
+      );
 
-    if (passwordError || !userData.user) {
-      throw new Error("Failed to set password");
-    }
+      fd.append("aadharPdf", docs.aadhaarProof);
+      fd.append("panPdf", docs.panProof);
+      fd.append("profilePic", docs.addressProof);
 
-    /* ================= GET JWT ================= */
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (sessionError || !session?.access_token) {
-      throw new Error("Session not found");
-    }
-
-    const jwtToken = session.access_token;
-
-    /* ================= BUILD FORM DATA ================= */
-    const formData = new FormData();
-
-    // 🔴 EXACT MATCH WITH CURL
-    formData.append(
-      "data",
-      new Blob(
-        [
-          JSON.stringify({
-            name: form.name,
-            email: form.email,
-            phoneNumber: form.phone,
-            address: form.address,
-            panNumber: form.pan,
-            aadharNumber: form.aadhaar,
-          }),
-        ],
-        { type: "application/json" }
-      )
-    );
-
-    formData.append("aadharPdf", docs.aadhaarProof);
-    formData.append("panPdf", docs.panProof);
-    formData.append("profilePic", docs.addressProof);
-
-    const res = await fetch(
-      `${BACKEND_URL}/auth/complete-signup`,
-      {
+      const res = await fetch(`${BACKEND_URL}/api/auth/complete-signup`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${jwtToken}`,
-          
+          Authorization: `Bearer ${token}`,
         },
-        body: formData,
-      }
-    );
+        body: fd,
+      });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || "Signup failed");
+      if (!res.ok) throw new Error(await res.text());
+
+      localStorage.setItem("sb_access_token", token);
+      navigate("/dashboard", { replace: true });
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
-
-    localStorage.setItem("sb_access_token", jwtToken);
-
-    navigate("/dashboard", { replace: true });
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Signup failed");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-blue-100 px-6">

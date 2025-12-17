@@ -19,10 +19,10 @@ const Dashboard = () => {
     const token = localStorage.getItem("sb_access_token");
 
    
-    if (!token) {
-      navigate("/auth", { replace: true });
-      return;
-    }
+    // if (!token) {
+    //   navigate("/auth", { replace: true });
+    //   return;
+    // }
 
     // ✅ Lightweight token verification
     fetch(`${BACKEND_URL}/secure/ping`, {
