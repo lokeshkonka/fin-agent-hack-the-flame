@@ -2,48 +2,50 @@ package com.meticura.meticura.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import java.util.Arrays;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
-    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+    private final SupabaseAuthFilter supabaseAuthFilter;
 
-    private final JwtAuthFilter jwtAuthFilter;
-
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
-        this.jwtAuthFilter = jwtAuthFilter;
-        logger.info("SecurityConfig initialized");
+    public SecurityConfig(SupabaseAuthFilter supabaseAuthFilter) {
+        this.supabaseAuthFilter = supabaseAuthFilter;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .cors(Customizer.withDefaults())
-            .authorizeHttpRequests(auth -> auth
-                // Public endpoints - NO JWT required
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/auth/profile/**").permitAll()
-                
-                // Protected endpoints - JWT required
-                .requestMatchers("/api/user/**").authenticated()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                
-                // Everything else authenticated
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .addFilterBefore(supabaseAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/error").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/complete-signup").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/user/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/user/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/profile").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/profile").authenticated()
+                .requestMatchers(HttpMethod.GET, "/admin/approve").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/kyc/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/kyc/**").authenticated()
+                .requestMatchers("/secure/**").authenticated()
+                .anyRequest().denyAll()
+            );
 
         return http.build();
     }
@@ -51,20 +53,24 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-            "http://localhost:5173",
+        config.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
-            "https://g3fc2ktx-8080.inc1.devtunnels.ms"
+            "http://localhost:5173",
+            "http://localhost:8080"
         ));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedMethods(Arrays.asList(
+            HttpMethod.GET.toString(),
+            HttpMethod.POST.toString(),
+            HttpMethod.PUT.toString(),
+            HttpMethod.DELETE.toString(),
+            HttpMethod.OPTIONS.toString()
+        ));
+        config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-
-        logger.info("CORS configured");
         return source;
     }
 }
