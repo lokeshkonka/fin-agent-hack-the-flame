@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/admin/approve").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/kyc/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/kyc/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/dashboard").authenticated()
                 .requestMatchers("/secure/**").authenticated()
                 .anyRequest().denyAll()
             );
