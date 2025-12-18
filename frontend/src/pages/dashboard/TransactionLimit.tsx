@@ -7,36 +7,31 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import { useEffect, useState } from "react";
 
 /* ================= TYPES ================= */
 
-interface LimitProps {
+interface Props {
   dailyLimit: number;
   dailySpent: number;
   monthlyLimit: number;
   monthlySpent: number;
+  dailySpendingData: { day: string; amount: number }[];
 }
 
-interface GraphPoint {
-  time: string;
-  spend: number;
-}
+/* ================= SUB COMPONENT ================= */
 
-/* ================= PROGRESS BAR ================= */
-
-const ProgressBar = ({ value }: { value: number }) => {
-  const width = Math.min(100, Math.max(0, value));
-
-  return (
-    <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
-      <div
-        className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-700 ease-out"
-        style={{ width: `${width}%` }}
-      />
-    </div>
-  );
-};
+const ProgressBar = ({ value }: { value: number }) => (
+  <div className="w-full h-2.5 rounded-full bg-slate-200 overflow-hidden">
+    <div
+      className="
+        h-2.5 rounded-full
+        bg-gradient-to-r from-blue-500 to-blue-600
+        transition-all duration-700 ease-out
+      "
+      style={{ width: `${Math.min(100, value)}%` }}
+    />
+  </div>
+);
 
 /* ================= MAIN ================= */
 
@@ -45,114 +40,103 @@ const TransactionLimit = ({
   dailySpent,
   monthlyLimit,
   monthlySpent,
-}: LimitProps) => {
-  const [graphData, setGraphData] = useState<GraphPoint[]>([
-    { time: "00:01", spend: dailySpent * 0.5 },
-    { time: "00:02", spend: dailySpent * 0.6 },
-    { time: "00:03", spend: dailySpent * 0.7 },
-  ]);
-
-  /* ===== Simulated realtime AI monitoring (1s tick) ===== */
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGraphData((prev) => {
-        const last = prev[prev.length - 1];
-        const nextSpend = Math.min(
-          dailyLimit,
-          last.spend + Math.random() * dailyLimit * 0.03
-        );
-
-        const now = new Date().toLocaleTimeString().slice(3, 8);
-
-        return [...prev.slice(-9), { time: now, spend: nextSpend }];
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [dailyLimit]);
-
+  dailySpendingData,
+}: Props) => {
   return (
-    <div className="rounded-3xl border border-blue-100 bg-white p-8 space-y-8 shadow-sm transition hover:shadow-md">
-      {/* HEADER */}
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900">
-          AI Transaction Monitoring
-        </h2>
-        <p className="text-sm text-slate-500 mt-1">
-          Real-time spend velocity & risk enforcement
-        </p>
-      </div>
-
-      {/* ================= GRAPH ================= */}
+    <div className="flex flex-col gap-6 min-h-[520px]">
+      {/* ================= GRAPH CARD ================= */}
       <div
-        style={{ width: "100%", height: 260 }}
-        className="rounded-2xl bg-blue-50 p-4"
+        className="
+          rounded-3xl border border-blue-100 bg-white p-6
+          transition-all duration-300 ease-out
+          hover:-translate-y-[2px]
+          hover:shadow-[0_16px_36px_-14px_rgba(37,99,235,0.25)]
+        "
       >
-        <p className="text-sm font-medium text-slate-700 mb-2">
-          Live AI Spend Analysis (per second)
-        </p>
-
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={graphData}>
-            <XAxis dataKey="time" tick={{ fontSize: 11 }} />
-            <YAxis
-              domain={[0, dailyLimit]}
-              tick={{ fontSize: 11 }}
-            />
-
-            <Tooltip
-              contentStyle={{
-                borderRadius: 8,
-                borderColor: "#c7d2fe",
-              }}
-            />
-
-            <ReferenceLine
-              y={dailyLimit}
-              stroke="#94a3b8"
-              strokeDasharray="4 4"
-            />
-
-            <Line
-              type="monotone"
-              dataKey="spend"
-              stroke="#2563eb"
-              strokeWidth={2.5}
-              dot={false}
-              isAnimationActive
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* ================= DAILY LIMIT ================= */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-600">Daily Limit</span>
-          <span className="font-medium">
-            ₹ {dailySpent.toLocaleString("en-IN")} / ₹{" "}
-            {dailyLimit.toLocaleString("en-IN")}
-          </span>
+        {/* HEADER */}
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Spending Trend
+          </h2>
+          <p className="text-sm text-slate-500">
+            Monitor daily spending
+          </p>
         </div>
-        <ProgressBar value={(dailySpent / dailyLimit) * 100} />
-      </div>
 
-      {/* ================= MONTHLY LIMIT ================= */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-600">Monthly Limit</span>
-          <span className="font-medium">
-            ₹ {monthlySpent.toLocaleString("en-IN")} / ₹{" "}
-            {monthlyLimit.toLocaleString("en-IN")}
-          </span>
+        {/* GRAPH */}
+        <div className="h-[200px] rounded-2xl bg-blue-50 p-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={dailySpendingData}>
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 11, fill: "#64748b" }}
+              />
+              <YAxis
+                domain={[0, dailyLimit]}
+                tick={{ fontSize: 11, fill: "#64748b" }}
+              />
+              <Tooltip />
+              <ReferenceLine
+                y={dailyLimit}
+                stroke="#94a3b8"
+                strokeDasharray="4 4"
+              />
+              <Line
+                dataKey="amount"
+                stroke="#2563eb"
+                strokeWidth={2.5}
+                dot={{ r: 2.5 }}
+                activeDot={{ r: 4 }}
+                isAnimationActive
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-        <ProgressBar value={(monthlySpent / monthlyLimit) * 100} />
       </div>
 
-      <p className="text-xs text-slate-500">
-        AI continuously evaluates transaction velocity against user-specific
-        limits to prevent fraud in real time.
-      </p>
+      {/* ================= STATUS / LIMIT CARD ================= */}
+      <div
+        className="
+          rounded-3xl border border-blue-100 bg-white p-6
+          transition-all duration-300 ease-out
+          hover:-translate-y-[2px]
+          hover:shadow-[0_16px_36px_-14px_rgba(37,99,235,0.25)]
+        "
+      >
+        <h3 className="text-base font-semibold text-slate-900 mb-5">
+          Transaction Limits
+        </h3>
+
+        <div className="space-y-6">
+          {/* DAILY */}
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-slate-600">
+                Daily Limit
+              </span>
+              <span className="font-medium text-slate-900">
+                ₹ {dailySpent.toLocaleString("en-IN")} / ₹{" "}
+                {dailyLimit.toLocaleString("en-IN")}
+              </span>
+            </div>
+            <ProgressBar value={(dailySpent / dailyLimit) * 100} />
+          </div>
+
+          {/* MONTHLY */}
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-slate-600">
+                Monthly Limit
+              </span>
+              <span className="font-medium text-slate-900">
+                ₹ {monthlySpent.toLocaleString("en-IN")} / ₹{" "}
+                {monthlyLimit.toLocaleString("en-IN")}
+              </span>
+            </div>
+            <ProgressBar value={(monthlySpent / monthlyLimit) * 100} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

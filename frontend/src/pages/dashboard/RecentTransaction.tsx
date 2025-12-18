@@ -15,10 +15,15 @@ interface Props {
   transactions: Tx[];
 }
 
+const PREVIEW_COUNT = 3;
+
 /* ================= COMPONENT ================= */
 
 const RecentTransaction = ({ transactions }: Props) => {
   const [selected, setSelected] = useState<Tx | null>(null);
+  const [showPassbook, setShowPassbook] = useState(false);
+
+  const previewTransactions = transactions.slice(0, PREVIEW_COUNT);
 
   return (
     <>
@@ -30,23 +35,35 @@ const RecentTransaction = ({ transactions }: Props) => {
                    hover:shadow-[0_16px_40px_-12px_rgba(37,99,235,0.25)]"
       >
         {/* Header */}
-        <div>
-          <h2 className="text-xl font-semibold text-slate-900">
-            Recent Transactions
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Latest activity on your account
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">
+              Recent Transactions
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Latest activity on your account
+            </p>
+          </div>
+
+          {transactions.length > PREVIEW_COUNT && (
+            <button
+              type="button"
+              onClick={() => setShowPassbook(true)}
+              className="text-sm font-medium text-blue-600 hover:text-blue-700"
+            >
+              Passbook
+            </button>
+          )}
         </div>
 
-        {/* List */}
+        {/* List (only latest 2–3) */}
         <div className="space-y-4">
-          {transactions.length === 0 ? (
+          {previewTransactions.length === 0 ? (
             <div className="py-12 text-center text-sm text-slate-500">
               No transactions yet
             </div>
           ) : (
-            transactions.map((tx) => (
+            previewTransactions.map((tx) => (
               <button
                 key={tx.id}
                 type="button"
@@ -57,7 +74,6 @@ const RecentTransaction = ({ transactions }: Props) => {
                            hover:border-blue-300 hover:bg-blue-50/40
                            hover:shadow-md active:scale-[0.985]"
               >
-                {/* Left accent */}
                 <span
                   className="absolute left-0 top-0 h-full w-1 bg-blue-500
                              opacity-0 transition-opacity duration-300
@@ -89,44 +105,75 @@ const RecentTransaction = ({ transactions }: Props) => {
         </div>
       </div>
 
-      {/* ================= MODAL ================= */}
-      {selected && (
+      {/* ================= PASSBOOK MODAL ================= */}
+      {showPassbook && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-          <div
-            className="relative w-full max-w-2xl rounded-3xl bg-white p-10
-                       shadow-[0_30px_80px_-20px_rgba(0,0,0,0.35)]
-                       animate-[fadeScale_0.25s_ease-out]"
-          >
-            {/* Close */}
+          <div className="relative w-full max-w-3xl rounded-3xl bg-white p-8 shadow-2xl">
             <button
               type="button"
-              onClick={() => setSelected(null)}
-              className="absolute right-5 top-5 rounded-full p-2
-                         text-slate-500 transition
-                         hover:bg-slate-100 hover:text-slate-700"
-              aria-label="Close"
+              onClick={() => setShowPassbook(false)}
+              className="absolute right-5 top-5 rounded-full p-2 text-slate-500 hover:bg-slate-100"
             >
               <X size={18} />
             </button>
 
-            {/* Header */}
-            <div className="mb-8">
-              <h3 className="text-2xl font-semibold text-slate-900">
-                Transaction Details
-              </h3>
-              <p className="text-sm text-slate-500 mt-1">
-                Detailed breakdown of this transaction
-              </p>
-            </div>
+            <h3 className="text-2xl font-semibold text-slate-900 mb-6">
+              Passbook
+            </h3>
 
-            {/* DETAILS GRID */}
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              {transactions.map((tx) => (
+                <button
+                  key={tx.id}
+                  type="button"
+                  onClick={() => setSelected(tx)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-4 text-left
+                             hover:bg-slate-50 transition"
+                >
+                  <div className="flex justify-between">
+                    <div>
+                      <p className="font-medium text-slate-900">
+                        {tx.name}
+                      </p>
+                      <p className="text-xs text-slate-500 font-mono">
+                        {tx.userId}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">
+                        ₹ {tx.amount.toLocaleString("en-IN")}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {tx.date}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= TRANSACTION DETAIL MODAL ================= */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="relative w-full max-w-2xl rounded-3xl bg-white p-10 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              className="absolute right-5 top-5 rounded-full p-2 text-slate-500 hover:bg-slate-100"
+            >
+              <X size={18} />
+            </button>
+
+            <h3 className="text-2xl font-semibold mb-6">
+              Transaction Details
+            </h3>
+
             <div className="grid grid-cols-2 gap-6">
               <DetailBox label="Name" value={selected.name} />
-              <DetailBox
-                label="User ID"
-                value={selected.userId}
-                mono
-              />
+              <DetailBox label="User ID" value={selected.userId} mono />
               <DetailBox
                 label="Amount"
                 value={`₹ ${selected.amount.toLocaleString("en-IN")}`}
@@ -150,16 +197,8 @@ interface DetailBoxProps {
   highlight?: boolean;
 }
 
-const DetailBox = ({
-  label,
-  value,
-  mono,
-  highlight,
-}: DetailBoxProps) => (
-  <div
-    className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-5
-               shadow-sm transition hover:shadow-md hover:bg-slate-100"
-  >
+const DetailBox = ({ label, value, mono, highlight }: DetailBoxProps) => (
+  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-5">
     <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">
       {label}
     </p>
