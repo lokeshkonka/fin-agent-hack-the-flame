@@ -13,7 +13,7 @@ interface LastTransaction {
 
 interface BalanceProps {
   balance: number;
-  userId: string;
+  accountId: string;
   lastReceived?: LastTransaction;
 }
 
@@ -21,7 +21,7 @@ interface BalanceProps {
 
 const BalanceSection = ({
   balance,
-  userId,
+  accountId,
   lastReceived,
 }: BalanceProps) => {
   const navigate = useNavigate();
@@ -30,8 +30,8 @@ const BalanceSection = ({
   const [showBalance, setShowBalance] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const copyUserId = async (): Promise<void> => {
-    await navigator.clipboard.writeText(userId);
+  const copyaccountId = async (): Promise<void> => {
+    await navigator.clipboard.writeText(accountId);
     setCopied(true);
     setTimeout(() => setCopied(false), 1400);
   };
@@ -171,13 +171,13 @@ const BalanceSection = ({
             </h3>
 
             <p className="text-sm text-center text-slate-500 mb-6">
-              Scan QR or copy User ID
+              Scan QR or copy Account ID
             </p>
 
             {/* QR */}
             <div className="mx-auto mb-6 flex items-center justify-center rounded-2xl bg-white border border-slate-200 p-4">
               <QRCodeSVG
-                value={`securebank://pay?userId=${userId}`}
+                value={`securebank://pay?accountId=${accountId}`}
                 size={220}
                 bgColor="#ffffff"
                 fgColor="#2563eb"
@@ -188,10 +188,10 @@ const BalanceSection = ({
 
             {/* USER ID */}
             <div className="flex items-center justify-between rounded-xl bg-slate-50 px-5 py-3 text-sm">
-              <span className="text-slate-600 truncate">{userId}</span>
+              <span className="text-slate-600 truncate">{accountId}</span>
               <button
                 type="button"
-                onClick={copyUserId}
+                onClick={copyaccountId}
                 className="flex items-center gap-1 font-medium text-blue-600 transition hover:text-blue-700"
               >
                 {copied ? <Check size={16} /> : <Copy size={16} />}

@@ -6,6 +6,7 @@ import Footer from "./Footer";
 import BalanceSection from "./BalanceSection";
 import TransactionLimit from "./TransactionLimit";
 import RecentTransaction, { type Tx } from "./RecentTransaction";
+import LoadingDashboard from "./LoadingDashboard";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string;
 
@@ -32,9 +33,11 @@ interface DashboardResponse {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [data, setData] = useState<DashboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("sb_access_token");
+
     if (!token) {
       navigate("/auth", { replace: true });
       return;
@@ -47,12 +50,19 @@ const Dashboard = () => {
         if (!res.ok) throw new Error("Unauthorized");
         return res.json();
       })
-      .then(setData)
+      .then((res) => {
+        setData(res);
+        setLoading(false);
+      })
       .catch(() => {
         localStorage.removeItem("sb_access_token");
         navigate("/auth", { replace: true });
       });
   }, [navigate]);
+
+  if (loading) {
+    return <LoadingDashboard />;
+  }
 
   if (!data) return null;
 
@@ -71,10 +81,9 @@ const Dashboard = () => {
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-12">
         {/* ================= TOP GRID ================= */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-10 items-start">
-          {/* LEFT */}
           <BalanceSection
             balance={data.balance}
-            userId={data.accountId}
+            accountId={data.accountId}
             lastReceived={
               transactions[0]
                 ? {
@@ -86,7 +95,6 @@ const Dashboard = () => {
             }
           />
 
-          {/* RIGHT */}
           <TransactionLimit
             dailyLimit={data.dailyLimit}
             dailySpent={data.dailySpent}
@@ -96,7 +104,7 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* ================= BOTTOM (FULL WIDTH) ================= */}
+        {/* ================= RECENT TRANSACTIONS ================= */}
         <RecentTransaction transactions={transactions} />
       </main>
 
