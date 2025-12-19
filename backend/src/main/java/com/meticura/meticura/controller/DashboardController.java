@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import com.meticura.meticura.entity.User;
 import com.meticura.meticura.repository.UserRepository;
 import com.meticura.meticura.repository.UserKycRepository;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -45,6 +46,22 @@ public class DashboardController {
         }
 
         return dashboardService.getDashboardData(email);
+    }
+
+    // ✅ NEW: check if KYC is approved
+    @GetMapping("/dashboard/is-kyc-approved")
+    public Map<String, Boolean> isKycApproved(Authentication authentication) {
+        String email = authentication.getName();
+        logger.info("Checking KYC approval status for {}", email);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserKyc kyc = userKycRepository.findById(user.getUserId()).orElse(null);
+
+        boolean approved = kyc != null && kyc.getStatus() == KycStatus.APPROVED;
+
+        return Map.of("approved", approved);
     }
 
 

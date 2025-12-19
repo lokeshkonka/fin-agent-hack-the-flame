@@ -151,4 +151,23 @@ public class AdminService {
         logger.info("User unfrozen: {}", email);
         return "User unfrozen successfully and fraud transactions deleted";
     }
+
+    public String approveKyc(String email) {
+    UserKyc kyc = userKycRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("KYC not found for email: " + email));
+
+    kyc.setStatus(KycStatus.APPROVED);
+    userKycRepository.save(kyc);
+
+    // optional: ensure user exists and is unfrozen
+    User user = userRepository.findById(kyc.getUserId())
+            .orElseThrow(() -> new RuntimeException("User entity not found for KYC userId"));
+
+    // if you were freezing users on fraud, you may keep this, or remove if not needed
+    user.setIsFrozen(false);
+    userRepository.save(user);
+
+    return "KYC approved successfully";
+}
+
 }

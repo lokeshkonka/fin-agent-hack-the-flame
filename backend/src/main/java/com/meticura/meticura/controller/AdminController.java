@@ -120,4 +120,27 @@ public class AdminController {
         response.put("message", result);
         return response;
     }
+
+
+        /**
+     * ✅ Route 7: Approve KYC
+     * POST /api/admin/approve-kyc
+     * Body: { "email": "user@example.com" }
+     */
+    @PostMapping("/approve-kyc")
+    public Map<String, String> approveKyc(
+            @RequestBody ApproveKycRequest request,
+            Authentication authentication) {
+
+        checkAdmin(authentication);  // re-use existing admin check
+        logger.info("Approve KYC request for email: {}", request.getEmail());
+
+        String result = adminService.approveKyc(request.getEmail());
+
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", result);
+        return response;
+    }
+
 }
