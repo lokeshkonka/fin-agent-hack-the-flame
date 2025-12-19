@@ -34,7 +34,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers("/error").permitAll()
+                .requestMatchers("/error").authenticated()
                 .requestMatchers(HttpMethod.POST, "/auth/complete-signup").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/user/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/user/**").authenticated()

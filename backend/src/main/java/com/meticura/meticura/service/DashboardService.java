@@ -56,7 +56,7 @@ public class DashboardService {
 
         dto.setTotalMonthlySpending(calculateMonthlySpending(userId));
         dto.setAvgDailySpending(calculateAverageDailySpending(userId));
-        dto.setBalance(calculateCurrentBalance(userId));
+        dto.setBalance(user.getBalance());  // ✅ READ from user entity, no calculation
 
         dto.setRecentTransactions(getRecentTransactions(userId));
         dto.setDailySpendingData(getLast7DaysSpending(userId));
@@ -88,22 +88,6 @@ public class DashboardService {
         }
     }
 
-    private Long calculateCurrentBalance(String userId) {
-        // you can extend this according to your business logic
-        LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
-        LocalDateTime now = LocalDateTime.now();
-
-        Long income = transactionRepository.getTotalAmountByTypeAndDateRange(
-                userId, TransactionType.INCOME, monthStart, now);
-        Long expense = transactionRepository.getTotalAmountByTypeAndDateRange(
-                userId, TransactionType.EXPENSE, monthStart, now);
-
-        if (income == null) income = 0L;
-        if (expense == null) expense = 0L;
-
-        return income - expense;
-    }
-
     private Long calculateMonthlySpending(String userId) {
         LocalDateTime start = LocalDate.now().withDayOfMonth(1).atStartOfDay();
         LocalDateTime end = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth())
@@ -123,7 +107,7 @@ public class DashboardService {
                 userId, TransactionType.EXPENSE, start, now);
         if (totalExpense == null) totalExpense = 0L;
 
-        int days = today.getDayOfMonth(); // days passed in current month
+        int days = today.getDayOfMonth();
         if (days <= 0) return 0L;
 
         return totalExpense / days;
@@ -162,7 +146,7 @@ public class DashboardService {
 
             Map<String, Object> m = new HashMap<>();
             m.put("date", date.toString());
-            m.put("day", date.getDayOfWeek().toString().substring(0, 3)); // Mon, Tue, ...
+            m.put("day", date.getDayOfWeek().toString().substring(0, 3));
             m.put("amount", expense);
 
             list.add(m);
@@ -200,14 +184,26 @@ public class DashboardService {
     }
 
     /**
-     * Helper to update spending when new transaction is created.
-     * Call this from your existing transaction creation flow.
+     * ✅ UPDATE BALANCE AFTER EVERY TRANSACTION
+     * Call this whenever a transaction is created
      */
-    public void handleNewTransaction(User user, Transaction transaction) {
-        if (transaction.getTransactionType() == TransactionType.EXPENSE) {
-            user.setDailySpent(user.getDailySpent() + transaction.getAmount());
-            user.setMonthlySpent(user.getMonthlySpent() + transaction.getAmount());
-            userRepository.save(user);
+    public void updateUserBalance(String userId, Long amount, TransactionType type) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (type == TransactionType.INCOME) {
+            user.setBalance(user.getBalance() + amount);  // add income
+        } else {
+            user.setBalance(user.getBalance() - amount);  // subtract expense
         }
+
+        // also update daily/monthly spent
+        if (type == TransactionType.EXPENSE) {
+            user.setDailySpent(user.getDailySpent() + amount);
+            user.setMonthlySpent(user.getMonthlySpent() + amount);
+        }
+
+        userRepository.save(user);
+        logger.info("Balance updated for user {}: new balance = {}", userId, user.getBalance());
     }
 }
