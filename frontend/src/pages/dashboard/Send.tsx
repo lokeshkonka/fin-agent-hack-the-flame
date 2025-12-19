@@ -7,7 +7,7 @@ import SendUI from "./SendUI";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string;
 
- interface ReceiverInfo {
+interface ReceiverInfo {
   userId: string;
   accountId: string;
   name: string;
@@ -118,7 +118,6 @@ const Send = () => {
       });
 
       const data: { status: string; message: string } = await res.json();
-
       if (data.status !== "success") throw new Error(data.message);
 
       setSuccess("Transaction completed successfully");
@@ -134,7 +133,11 @@ const Send = () => {
   useEffect(() => {
     if (!showQR) return;
 
-    const scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 }, false);
+    const scanner = new Html5QrcodeScanner(
+      "qr-reader",
+      { fps: 10, qrbox: 250 },
+      false
+    );
 
     scanner.render(
       (text: string) => {
@@ -156,11 +159,32 @@ const Send = () => {
     };
   }, [showQR]);
 
-  if (checking) return null;
+  /* ================= LOADING SHELL ================= */
 
-  return (
-    <>
-      <Navbar />
+  if (checking) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-[70vh] flex items-center justify-center bg-slate-50">
+          <div className="w-full max-w-md rounded-3xl bg-white border border-slate-200 p-10 text-center shadow-sm animate-pulse">
+            <div className="h-5 w-32 mx-auto bg-slate-200 rounded mb-6" />
+            <div className="space-y-4">
+              <div className="h-10 bg-slate-200 rounded-xl" />
+              <div className="h-10 bg-slate-200 rounded-xl" />
+              <div className="h-12 bg-slate-200 rounded-xl" />
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+return (
+  <div className="min-h-screen flex flex-col bg-slate-50">
+    <Navbar />
+
+    <div className="flex-1">
       <SendUI
         senderFrozen={senderFrozen}
         receiver={receiver}
@@ -182,9 +206,12 @@ const Send = () => {
           navigate("/dashboard", { replace: true });
         }}
       />
-      <Footer />
-    </>
-  );
+    </div>
+
+    <Footer />
+  </div>
+);
+
 };
 
 export default Send;

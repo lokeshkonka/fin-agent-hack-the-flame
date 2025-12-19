@@ -9,6 +9,7 @@ import Docs from "./pages/Docs";
 import NotFound from "./pages/Error/NotFound";
 import ErrorPage from "./pages/Error/ErrorPage";
 import Send from "./pages/dashboard/Send";
+import Admin from "./pages/Admin/Admin";
 
 // Error pages
 
@@ -25,9 +26,9 @@ function App() {
         
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/send" element={<Send />} />
 
-        
+        <Route path="/send" element={<Send />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/error" element={<ErrorPage />} />
 
         
