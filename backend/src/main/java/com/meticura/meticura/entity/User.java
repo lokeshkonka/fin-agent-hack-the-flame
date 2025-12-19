@@ -1,7 +1,13 @@
 package com.meticura.meticura.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users")
@@ -57,6 +63,11 @@ public class User {
     @Column(name = "last_reset_date", nullable = false)
     private LocalDateTime lastResetDate = LocalDateTime.now();
 
+    @Column(name = "is_admin", nullable = false)
+    private Boolean isAdmin = false;
+
+
+
     // getters and setters
 
     public String getUserId() { return userId; }
@@ -106,4 +117,9 @@ public class User {
 
     public LocalDateTime getLastResetDate() { return lastResetDate; }
     public void setLastResetDate(LocalDateTime lastResetDate) { this.lastResetDate = lastResetDate; }
+
+    public Boolean getIsAdmin() { return isAdmin; }
+    public void setIsAdmin(Boolean isAdmin) { this.isAdmin = isAdmin; }
+
+
 }

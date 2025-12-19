@@ -115,7 +115,7 @@ public class MoneyTransferService {
         // Call fraud detection service
         try {
             FraudDetectionResponse fraudResponse = restTemplate.postForObject(
-                    "http://localhost:5000/predict",
+                    "http://localhost:5000/api/v0/predict",
                     fraudRequest,
                     FraudDetectionResponse.class
             );

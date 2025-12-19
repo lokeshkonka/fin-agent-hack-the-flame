@@ -28,4 +28,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    @Query("""
+    SELECT COUNT(t)
+    FROM Transaction t
+    WHERE CAST(t.createdAt AS DATE) = CAST(CURRENT_TIMESTAMP AS DATE)
+    """)
+    Long countTransactionsToday();
+
 }
