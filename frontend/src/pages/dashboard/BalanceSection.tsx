@@ -88,11 +88,11 @@ const BalanceSection = ({
             Funds available for transactions after KYC approval
           </p>
 
-          {/* LAST TRANSACTION */}
+         
           {lastReceived && (
             <div className="mb-12 rounded-xl bg-blue-50 px-6 py-5 text-sm">
               <p className="text-slate-600">
-                Last received from{" "}
+                Last Transaction from{" "}
                 <span className="font-medium text-slate-900">
                   {lastReceived.from}
                 </span>
