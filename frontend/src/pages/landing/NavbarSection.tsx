@@ -9,19 +9,36 @@ const NavbarSection = () => {
         <div className="flex items-center gap-2">
           <img src="/icon.svg" alt="SecureBank AI" className="h-7 w-7" />
           <span className="text-lg font-semibold text-slate-950">
+            
+                      <a
+            href="/"
+            className="hover:text-slate-900 transition"
+          >
             SecureBank AI
+          </a>
           </span>
         </div>
 
         {/* NAV LINKS */}
         <nav className="hidden md:flex items-center gap-10 text-sm text-slate-700">
-          <a href="#problem" className="hover:text-slate-900 transition">
+          <a
+            href="/#problem"
+            className="hover:text-slate-900 transition"
+          >
             Problem
           </a>
-          <a href="#solution" className="hover:text-slate-900 transition">
+
+          <a
+            href="/#solution"
+            className="hover:text-slate-900 transition"
+          >
             Solution
           </a>
-          <a href="#architecture" className="hover:text-slate-900 transition">
+
+          <a
+            href="/#architecture"
+            className="hover:text-slate-900 transition"
+          >
             Architecture
           </a>
         </nav>
@@ -45,7 +62,7 @@ const NavbarSection = () => {
         </Link>
       </div>
 
-      {/* divider only */}
+      {/* divider */}
       <div className="h-px w-full bg-slate-300" />
     </header>
   );
