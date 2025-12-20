@@ -12,4 +12,6 @@ import java.util.Optional;
 public interface UserKycRepository extends JpaRepository<UserKyc, String> {
     List<UserKyc> findByStatus(KycStatus status);
     Optional<UserKyc> findByEmail(String email);
+    Optional<UserKyc> findByUserId(String userId); 
+    
 }

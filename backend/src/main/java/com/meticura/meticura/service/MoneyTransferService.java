@@ -9,9 +9,13 @@ import com.meticura.meticura.repository.TransactionRepository;
 import com.meticura.meticura.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import java.time.LocalDateTime;
 import java.time.DayOfWeek;
 
@@ -113,26 +117,54 @@ public class MoneyTransferService {
         );
 
         // Call fraud detection service
-        try {
-            FraudDetectionResponse fraudResponse = restTemplate.postForObject(
-                    "http://localhost:5000/api/v0/predict",
-                    fraudRequest,
-                    FraudDetectionResponse.class
+    try {
+        String url = "http://localhost:5000/api/v0/predict";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth("sk_qxKjLxTe6ReRYDv-6X6C4I6YiJbOwTp0Cga8d62KXhk");
+
+        HttpEntity<FraudDetectionRequest> entity = new HttpEntity<>(fraudRequest, headers);
+
+        ResponseEntity<FraudDetectionResponse> response =
+                restTemplate.exchange(
+                        url,
+                        HttpMethod.POST,
+                        entity,
+                        FraudDetectionResponse.class
+                );
+
+        FraudDetectionResponse fraudResponse = response.getBody();
+
+        logger.info("Fraud detection result: {}", 
+            fraudResponse != null && fraudResponse.getPrediction() != null 
+                ? fraudResponse.getPrediction().getResult() 
+                : "null");
+
+        // ✅ Check the result inside prediction object
+        if (fraudResponse != null 
+            && fraudResponse.getPrediction() != null 
+            && "Not fraud".equalsIgnoreCase(fraudResponse.getPrediction().getResult())) {
+            
+            return proceedWithTransaction(sender, receiver, amount);
+        } else if (fraudResponse != null && fraudResponse.getPrediction() != null) {
+            
+            return handleFraudDetected(
+                sender, 
+                receiverAccountId, 
+                amount, 
+                fraudResponse.getPrediction().getResult()
             );
-
-            logger.info("Fraud detection result: {}", fraudResponse.getResult());
-
-            if ("Not fraud".equalsIgnoreCase(fraudResponse.getResult())) {
-                // ✅ Proceed with transaction
-                return proceedWithTransaction(sender, receiver, amount);
-            } else {
-                // ✅ Mark as fraud and freeze account
-                return handleFraudDetected(sender, receiverAccountId, amount, fraudResponse.getResult());
-            }
-        } catch (Exception e) {
-            logger.error("Fraud detection service error: {}", e.getMessage());
-            return "Fraud detection service error: " + e.getMessage();
+        } else {
+            return "Fraud detection service error: empty response";
         }
+
+    } catch (Exception e) {
+        logger.error("Fraud detection service error: {}", e.getMessage());
+        return "Fraud detection service error: " + e.getMessage();
+    }
+
+
     }
 
     // Helper: Proceed with transaction

@@ -49,20 +49,33 @@ public class DashboardController {
     }
 
     // ✅ NEW: check if KYC is approved
-    @GetMapping("/dashboard/is-kyc-approved")
-    public Map<String, Boolean> isKycApproved(Authentication authentication) {
+   @GetMapping("/dashboard/is-kyc-approved")
+    public Map<String, Object> isKycApproved(Authentication authentication) {
         String email = authentication.getName();
-        logger.info("Checking KYC approval status for {}", email);
+        logger.info("Checking KYC for: {}", email);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // ✅ Convert Long ID to String for UserKyc lookup
+        String userKycId = user.getUserId().toString();
+        logger.info("User ID (Long): {}, UserKyc ID (String): {}", user.getUserId(), userKycId);
 
-        UserKyc kyc = userKycRepository.findById(user.getUserId()).orElse(null);
+        UserKyc kyc = userKycRepository.findById(userKycId).orElse(null);
+        
+        if (kyc == null) {
+            logger.info("No KYC record found for ID: {}", userKycId);
+            return Map.of("approved", false, "status", "NOT_FOUND");
+        }
 
-        boolean approved = kyc != null && kyc.getStatus() == KycStatus.APPROVED;
-
-        return Map.of("approved", approved);
+        boolean approved = kyc.getStatus() == KycStatus.APPROVED;
+        return Map.of("approved", approved, "status", kyc.getStatus().toString());
     }
+
+
+
+
+
 
 
 }

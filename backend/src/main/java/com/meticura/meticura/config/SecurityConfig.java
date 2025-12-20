@@ -43,7 +43,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/admin/approve").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/kyc/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/kyc/**").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/dashboard").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/dashboard/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/transfer/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/transfer/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/admin/**").authenticated()
@@ -61,7 +61,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
             "http://localhost:5173",
-            "http://localhost:8080"
+            "http://localhost:8080",
+            "https://securebank-eight.vercel.app"
         ));
         config.setAllowedMethods(Arrays.asList(
             HttpMethod.GET.toString(),
