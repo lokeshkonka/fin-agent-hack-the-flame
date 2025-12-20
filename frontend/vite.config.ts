@@ -7,7 +7,6 @@ export default defineConfig({
 
   server: {
     host: true,
-    // Dev-only: ngrok host
     allowedHosts: ["ragged-sherly-satisfactorily.ngrok-free.dev"],
   },
 
