@@ -1,41 +1,49 @@
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
 
-import Auth from "./pages/Auth.tsx";
-import Dashboard from "./pages/dashboard/Dashboard";
-import LandingPage from "./pages/landing/LandingPage";
-import Profile from "./pages/Profile/Profile";
-import Docs from "./pages/Docs";
-import NotFound from "./pages/Error/NotFound";
-import ErrorPage from "./pages/Error/ErrorPage";
-import Send from "./pages/dashboard/Send";
-import Admin from "./pages/Admin/Admin.tsx";
-import KycPending from "./pages/KycPending.tsx";
 
-// Error pages
 
+const LandingPage = lazy(() => import("./pages/landing/LandingPage"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Docs = lazy(() => import("./pages/Docs"));
+
+const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
+const Send = lazy(() => import("./pages/dashboard/Send"));
+
+const Profile = lazy(() => import("./pages/Profile/Profile"));
+const Admin = lazy(() => import("./pages/Admin/Admin"));
+const KycPending = lazy(() => import("./pages/KycPending"));
+
+const ErrorPage = lazy(() => import("./pages/Error/ErrorPage"));
+const NotFound = lazy(() => import("./pages/Error/NotFound"));
+
+/* ================= APP ================= */
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Suspense fallback={null}>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/auth/*" element={<Auth />} />
+          <Route path="/docs" element={<Docs />} />
 
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/auth/*" element={<Auth />} />
-        <Route path="/docs" element={<Docs />} />
+          {/* User */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/send" element={<Send />} />
 
-        
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/profile" element={<Profile />} />
+          {/* Admin / States */}
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/pending" element={<KycPending />} />
+          <Route path="/error" element={<ErrorPage />} />
 
-        <Route path="/send" element={<Send />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/error" element={<ErrorPage />} />
-        <Route path="/pending" element={<KycPending />} />
-
-        
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* Fallback */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
