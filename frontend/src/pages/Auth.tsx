@@ -38,6 +38,15 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const stepParam = params.get("step");
+
+  if (stepParam === "3") {
+    setTab("signup");
+    setStep(3);
+  }
+}, []);
 
   const [form, setForm] = useState<FormState>({
     name: "",
@@ -57,18 +66,26 @@ const Auth = () => {
   });
 
   /* ================= AUTH STATE ================= */
+useEffect(() => {
+  let handled = false;
 
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session && tab === "signup" && step === 2) {
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((event, session) => {
+    if (handled) return;
+
+    if (event === "SIGNED_IN" && session) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("step") === "3") {
+        handled = true;
+        setTab("signup");
         setStep(3);
       }
-    });
+    }
+  });
 
-    return () => subscription.unsubscribe();
-  }, [step, tab]);
+  return () => subscription.unsubscribe();
+}, []);
 
   /* ================= SIGN IN ================= */
 
@@ -118,7 +135,7 @@ const Auth = () => {
         email: form.email,
         options: {
           shouldCreateUser: true,
-          emailRedirectTo: `${window.location.origin}/auth`,
+          emailRedirectTo: `${window.location.origin}/auth?step=3`,
         },
       });
 
@@ -141,6 +158,8 @@ const Auth = () => {
   /* ================= SIGN UP STEP 3 ================= */
 
   const submitSignup = async (e: React.FormEvent) => {
+    if (loading) return;
+
     e.preventDefault();
     setError(null);
 
